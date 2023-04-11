@@ -5,7 +5,6 @@ from pipeline import pipeline
 import pandas as pd
 from tasks import prefect_tasks
 
-mod = __import__('tasks', fromlist=settings.tasks.values())
 
 def task_executor(pipeline_id, data_pickle):
     print("inside te***")
