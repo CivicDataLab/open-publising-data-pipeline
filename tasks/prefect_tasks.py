@@ -17,9 +17,38 @@ from io import StringIO
 
 
 @task
+def rename_column(context, pipeline, task_obj):
+    data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data)
+    if not exception_flag:  # if there's no error while executing the task
+        # Replace the following with your own code if the need is different.
+        # Generally, to read the returned data into a dataframe and save it against the pipeline object for further tasks
+        df = pd.read_csv(StringIO(data), sep=',')
+        pipeline.data = df
+        pipeline.data.to_csv('assam_split.csv', index=False)
+        # Following is a mandatory line to set logs in prefect UI
+        set_task_model_values(task_obj, pipeline)
+    else:
+        pipeline.logger.error(f"""ERROR: {data} at split_column""")
+
+
+@task
+def split_column(context, pipeline, task_obj):
+    data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data)
+    if not exception_flag:  # if there's no error while executing the task
+        # Replace the following with your own code if the need is different.
+        # Generally, to read the returned data into a dataframe and save it against the pipeline object for further tasks
+        df = pd.read_csv(StringIO(data), sep=',')
+        pipeline.data = df
+        # Following is a mandatory line to set logs in prefect UI
+        set_task_model_values(task_obj, pipeline)
+    else:
+        pipeline.logger.error(f"""ERROR: {data} at split_column""")
+
+
+@task
 def skip_column(context, pipeline, task_obj):
     data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data)
-    print(exception_flag,"(((")
+    print(exception_flag, "(((")
     if not exception_flag:
         df = pd.read_csv(StringIO(data), sep=',')
         try:
@@ -31,6 +60,7 @@ def skip_column(context, pipeline, task_obj):
         set_task_model_values(task_obj, pipeline)
     else:
         pipeline.logger.error(f"""ERROR: {data} at skip_column""")
+
 
 @task
 def merge_columns(context, pipeline, task_obj):
@@ -92,6 +122,7 @@ def aggregate(context, pipeline, task_obj):
         print("data%%%%", pipeline.data)
         set_task_model_values(task_obj, pipeline)
 
+
 @task
 def query_data_resource(context, pipeline, task_obj):
     columns = context['columns']
@@ -120,6 +151,7 @@ def query_data_resource(context, pipeline, task_obj):
 
     set_task_model_values(task_obj, pipeline)
 
+
 @task
 def fill_missing_fields(context, pipeline, task_obj):
     data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data)
@@ -137,6 +169,7 @@ def sample_scraper(context, pipeline, task_obj):
     else:
         pipeline.logger.error(f"""ERROR: {data} at sample_scraper""")
 
+
 @task
 def db_loader(context, pipeline, task_obj):
     # data = pipeline.data.to_json()
@@ -146,6 +179,7 @@ def db_loader(context, pipeline, task_obj):
         print("data loaded in db")
     else:
         pipeline.logger.error(f"""ERROR: {data} at db_loader""")
+
 
 @flow
 def pipeline_executor(pipeline):

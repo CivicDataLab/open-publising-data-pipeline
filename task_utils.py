@@ -51,6 +51,7 @@ class TasksRpcClient(object):
             pika.ConnectionParameters(host='localhost'))
 
         self.routing_key = task_name
+        print(self.routing_key, "%%%%%$$$$$$$$")
         self.context = context
         self.data = data
         self.channel = self.connection.channel()
