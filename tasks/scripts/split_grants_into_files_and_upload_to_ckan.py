@@ -1,9 +1,10 @@
 import json
+import re
 
 import pandas as pd
 import pika
 
-# from tasks.scripts.s3_utils import upload_result
+#from tasks.scripts.s3_utils import upload_result
 
 connection = pika.BlockingConnection(
     pika.ConnectionParameters(host='localhost'))
@@ -14,28 +15,31 @@ result = channel.queue_declare('', exclusive=False, durable=True)
 queue_name = result.method.queue
 
 print("queue name----", queue_name)
-binding_key = "merge_columns"
+binding_key = "split_into_files_and_upload_to_ckan"
 
 channel.queue_bind(exchange='topic_logs', queue=queue_name, routing_key=binding_key)
 
 
-def merge_columns(context, data):
+def split_into_files_and_upload_to_ckan(context, data):
     try:
-        cols_to_merge = context['columns'] # list
-        print(cols_to_merge)
-        output_column = context['output_column']
-        print(output_column)
-        separator = context['separator']
-        drop_flag = context['drop_flag']
-        print(drop_flag, "+++++++++++++++++++++++++++")
-        transformed_data = pd.read_json(data)
-        transformed_data[output_column] = transformed_data[cols_to_merge].astype(str).agg(f"""{separator}""".join, axis=1)
-        if drop_flag == "True":
-            transformed_data = transformed_data.drop(cols_to_merge, axis=1)
+        pattern = re.compile('[/$&()*^%#@!]+')
+        data = pd.read_json(data)
+        file_path = "2023-24/Assam/"
+        for grant in data['Grant Number'].unique():
+            grant_num, grant_name = grant.split("-", 1)[0], grant.split("-", 1)[1]
+            print(grant_num)
+            print(grant_name)
+            "Grant No. 1 -State Legislature"
+            grant_name = grant_name.replace("-", " ")
+            file_name = "Grant No. " + grant_num + "-" + grant_name
+            file_name = pattern.sub('-', file_name).replace("- ", "-").replace(" -", "-")
+            # Filter the dataframe using that column and value from the list
+
+            data[data['Grant Number'] == grant].to_csv(file_path+file_name + ".csv", index=False)
     except Exception as e:
         return "Worker failed with an error - " + str(e)
     # return the transformed data
-    return transformed_data
+    return "Success"
 
 
 def on_request(ch, method, props, body):
@@ -53,20 +57,20 @@ def on_request(ch, method, props, body):
         context = task_details["context"]
         data = task_details["data"]
         try:
-            response = merge_columns(context, data)
+            response = split_into_files_and_upload_to_ckan(context, data)
             if isinstance(response, pd.core.frame.DataFrame):
                 response_msg = response.to_csv()
             else:
                 response_msg = response
-            # with open("merge_col_result", "wb") as f:
+            # with open("xyz", "wb") as f:
             #     f.write(str(response_msg.text))
-            #     s3_link = upload_result("merge_col_result")
+            #     s3_link = upload_result("xyz")
             ch.basic_publish(exchange="",
                              routing_key=props.reply_to,
-                             properties=pika.BasicProperties(correlation_id=props.correlation_id, delivery_mode=2),
+                             properties=pika.BasicProperties(correlation_id=props.correlation_id,delivery_mode=2),
                              body=str(response_msg))
             ch.basic_ack(delivery_tag=method.delivery_tag)
-            print("[x] sent the response to the client..", response_msg)
+            print("[x] sent the response to the client..")
         except Exception as e:
             raise e
 

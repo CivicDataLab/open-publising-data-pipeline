@@ -1,9 +1,14 @@
+import re
+
 import pandas as pd
 
+
+pattern = re.compile('[/$&()*^%#@!]+')
 # data = pd.read_csv('sample.csv')
 data = pd.read_csv("https://docs.google.com/spreadsheets/d/1z52IRRcn3Q6AFdVATi0WaLpF8MoxopqU/export?format=csv")
 print(data)
-column = 'Head of Account'
-sep = '-'
-data[["Major Head Code","Sub Major Head Code","Minor Head Code","Sub Head Code","Sub Sub Head Code","Detail Head Code","Sub Detail Head Code"]] = data[column].str.split(sep, expand=True)
+columns = ["Major Head Description","Sub Major Head Description","Minor Head Description","Sub Head Description","Sub Sub Head Description","Detail Head Description","Sub Detail Head description"]
+output_column = "Head Description in English"
+separator = "$"
+data[output_column] = data[columns].astype(str).agg(f"""{separator}""".join, axis=1)
 print(data)

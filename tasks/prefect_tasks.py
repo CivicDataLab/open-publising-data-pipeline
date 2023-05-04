@@ -17,14 +17,26 @@ from io import StringIO
 
 
 @task
+def split_into_files_and_upload_to_ckan(context, pipeline, task_obj):
+    data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data)
+    if not exception_flag:    # if there's no error while executing the task
+        # Replace the following with your own code if the need is different.
+        # Generally, to read the returned data into a dataframe and save it against the pipeline object for further tasks
+        # Following is a mandatory line to set logs in prefect UI
+        print("done!!")
+        set_task_model_values(task_obj, pipeline)
+    else:
+        pipeline.logger.error(f"""ERROR: {data} at split_into_files_and_upload_to_ckan""")
+
+@task
 def rename_column(context, pipeline, task_obj):
     data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data)
     if not exception_flag:  # if there's no error while executing the task
         # Replace the following with your own code if the need is different.
         # Generally, to read the returned data into a dataframe and save it against the pipeline object for further tasks
         df = pd.read_csv(StringIO(data), sep=',')
+        df = df.filter(regex='^(?!Unnamed)')
         pipeline.data = df
-        pipeline.data.to_csv('assam_split.csv', index=False)
         # Following is a mandatory line to set logs in prefect UI
         set_task_model_values(task_obj, pipeline)
     else:
@@ -38,6 +50,7 @@ def split_column(context, pipeline, task_obj):
         # Replace the following with your own code if the need is different.
         # Generally, to read the returned data into a dataframe and save it against the pipeline object for further tasks
         df = pd.read_csv(StringIO(data), sep=',')
+        df = df.filter(regex='^(?!Unnamed)')
         pipeline.data = df
         # Following is a mandatory line to set logs in prefect UI
         set_task_model_values(task_obj, pipeline)
@@ -51,12 +64,8 @@ def skip_column(context, pipeline, task_obj):
     print(exception_flag, "(((")
     if not exception_flag:
         df = pd.read_csv(StringIO(data), sep=',')
-        try:
-            df = remove_unnamed_col(df)
-        except:
-            pass
         pipeline.data = df
-        print("data%%%%", pipeline.data)
+        # print("data%%%%", pipeline.data)
         set_task_model_values(task_obj, pipeline)
     else:
         pipeline.logger.error(f"""ERROR: {data} at skip_column""")
@@ -67,9 +76,10 @@ def merge_columns(context, pipeline, task_obj):
     data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data)
     if not exception_flag:
         df = pd.read_csv(StringIO(data), sep=',')
-        df = remove_unnamed_col(df)
+        df = df.filter(regex='^(?!Unnamed)')
         pipeline.data = df
-        print("data%%%%", pipeline.data)
+        # pipeline.data.to_csv("merged_assam.csv")
+        # print("data%%%%", pipeline.data)
         set_task_model_values(task_obj, pipeline)
     else:
         pipeline.logger.error(f"""ERROR: {data} at merge_columns""")
@@ -82,7 +92,7 @@ def anonymize(context, pipeline, task_obj):
         df = pd.read_csv(StringIO(data), sep=',')
         df = remove_unnamed_col(df)
         pipeline.data = df
-        print("data%%%%", pipeline.data)
+        # print("data%%%%", pipeline.data)
         set_task_model_values(task_obj, pipeline)
     else:
         pipeline.logger.error(f"""ERROR: {data} at anonymize""")
@@ -208,5 +218,5 @@ def pipeline_executor(pipeline):
         pipeline.logger.info(f"""INFO: Set Pipeline status to Done.""")
         pipeline.model.save()
     pipeline.model.output_id = str(pipeline.model.pipeline_id) + "_" + pipeline.model.status
-    print("Data after pipeline execution\n", pipeline.data)
+    # print("Data after pipeline execution\n", pipeline.data)
     return

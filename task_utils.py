@@ -112,7 +112,6 @@ def publish_task_and_process_result(task_obj, context, data):
     try:
         data_bytes = task_publisher.call()  # this will be a csv of bytes type
         data = str(data_bytes.decode("utf-8"))
-        print(data, "******")
     except Exception as e:
         print(str(e), "&&&&&&&")
         send_error_to_prefect_cloud(e)
