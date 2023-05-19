@@ -1,8 +1,11 @@
 import json
+import os
 import re
 
 import pandas as pd
 import pika
+
+from ckan_upload import CreateStatesDatasets
 
 #from tasks.scripts.s3_utils import upload_result
 
@@ -24,8 +27,16 @@ def split_into_files_and_upload_to_ckan(context, data):
     try:
         pattern = re.compile('[/$&()*^%#@!]+')
         data = pd.read_json(data)
-        file_path = "2023-24/Assam/"
+        is_exists = os.path.exists("Assam")
+        print(is_exists, "***")
+        if not is_exists:
+            print("Inside existsststst")
+            os.mkdir("Assam")
+            os.mkdir("Assam/2023-24")
+        file_path = "Assam/2023-24/"
+        i = 0
         for grant in data['Grant Number'].unique():
+            i += 1
             grant_num, grant_name = grant.split("-", 1)[0], grant.split("-", 1)[1]
             print(grant_num)
             print(grant_name)
@@ -36,6 +47,12 @@ def split_into_files_and_upload_to_ckan(context, data):
             # Filter the dataframe using that column and value from the list
 
             data[data['Grant Number'] == grant].to_csv(file_path+file_name + ".csv", index=False)
+            if i==1:
+                break
+        ckan_upload_obj = CreateStatesDatasets()
+        print("created ckan obj.")
+        ckan_upload_obj.create_docs_for_dir("https://openbudgetsindia.org/", "7e412837-f3ee-4f9d-b8ee-31f066acde5d",
+                                     file_path, "assam")
     except Exception as e:
         return "Worker failed with an error - " + str(e)
     # return the transformed data
