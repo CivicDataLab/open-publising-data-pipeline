@@ -1,4 +1,6 @@
 import json
+import os.path
+import uuid
 
 import pandas as pd
 import pika
@@ -19,18 +21,25 @@ binding_key = "skip_column"
 channel.queue_bind(exchange='topic_logs', queue=queue_name, routing_key=binding_key)
 
 
-def skip_column(context, data):
+def skip_column(context, data_path):
     column = context['columns']
     col = column
-    transformed_data = pd.read_json(data)
+    transformed_data = pd.read_csv(data_path)
     if not isinstance(column, list):
         column = list()
         column.append(col)
     try:
         transformed_data = transformed_data.drop(column, axis=1)
+        temp_file_name = str(uuid.uuid4())
+        is_exists = os.path.exists("pipeline_temp_files")
+        if not is_exists:
+            os.mkdir("pipeline_temp_files")
+        file_name = "pipeline_temp_files/" + temp_file_name + ".csv"
+        transformed_data.to_csv(file_name, index=False)
+        data_file_path = os.path.abspath(file_name)
     except Exception as e:
         return "Worker failed with an error - " + str(e)
-    return transformed_data
+    return data_file_path
 
 
 def on_request(ch, method, props, body):
@@ -46,20 +55,16 @@ def on_request(ch, method, props, body):
         # if the message is other than "get-ack" then carryout the task
         task_details = json.loads(body)
         context = task_details["context"]
-        data = task_details["data"]
+        data_path = task_details["data_path"]
         try:
-            response = skip_column(context, data)
-            if isinstance(response, pd.core.frame.DataFrame):
-                response_msg = response.to_csv()
-            else:
-                response_msg = response
+            response = skip_column(context, data_path)
             # with open("skip_column_result", "wb") as f:
             #     f.write(str(response_msg.text))
             #     s3_link = upload_result("skip_column_result")
             ch.basic_publish(exchange="",
                              routing_key=props.reply_to,
                              properties=pika.BasicProperties(correlation_id=props.correlation_id, delivery_mode=2),
-                             body=str(response_msg))
+                             body=str(response))
             ch.basic_ack(delivery_tag=method.delivery_tag)
             print("[x] sent the response to the client..")
         except Exception as e:

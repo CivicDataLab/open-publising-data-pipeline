@@ -6,23 +6,23 @@ import pandas as pd
 from tasks import prefect_tasks
 
 
-def task_executor(pipeline_id, data_pickle):
+def task_executor(pipeline_id, data_url):
     print("inside te***")
     print("pipeline_id is ", pipeline_id)
     try:
-        data = None
-        try:
-            data = pd.read_csv(data_pickle)
-            print(data)
-        except Exception as e:
-            print(str(e), "error in model to pipeline!!!!!")
-            pass
-        finally:
-            os.remove(data_pickle)
+    #     data = None
+    #     try:
+    #         data = pd.read_csv(data_pickle)
+    #         print(data)
+    #     except Exception as e:
+    #         print(str(e), "error in model to pipeline!!!!!")
+    #         pass
+    #     finally:
+    #         os.remove(data_pickle)
         print(" got pipeline id...", pipeline_id)
         pipeline_object = Pipeline.objects.get(pk=pipeline_id)
         tasks = pipeline_object.task_set.all().order_by("order_no")
-        new_pipeline = pipeline.Pipeline(pipeline_object, data)
+        new_pipeline = pipeline.Pipeline(pipeline_object, data_url)
         print("received tasks from POST request..for..", new_pipeline.model.pipeline_name)
         # print("data before...", new_pipeline.data)
         def execution_from_model(task):

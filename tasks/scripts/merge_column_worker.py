@@ -1,4 +1,6 @@
 import json
+import os
+import uuid
 
 import pandas as pd
 import pika
@@ -19,7 +21,7 @@ binding_key = "merge_columns"
 channel.queue_bind(exchange='topic_logs', queue=queue_name, routing_key=binding_key)
 
 
-def merge_columns(context, data):
+def merge_columns(context, data_path):
     try:
         cols_to_merge = context['columns'] # list
         print(cols_to_merge)
@@ -27,15 +29,21 @@ def merge_columns(context, data):
         print(output_column)
         separator = context['separator']
         drop_flag = context['drop_flag']
-        print(drop_flag, "+++++++++++++++++++++++++++")
-        transformed_data = pd.read_json(data)
+        transformed_data = pd.read_csv(data_path)
         transformed_data[output_column] = transformed_data[cols_to_merge].astype(str).agg(f"""{separator}""".join, axis=1)
         if drop_flag == "True":
             transformed_data = transformed_data.drop(cols_to_merge, axis=1)
+        temp_file_name = str(uuid.uuid4())
+        is_exists = os.path.exists("pipeline_temp_files")
+        if not is_exists:
+            os.mkdir("pipeline_temp_files")
+        file_name = "pipeline_temp_files/" + temp_file_name + ".csv"
+        transformed_data.to_csv(file_name, index=False)
+        data_file_path = os.path.abspath(file_name)
     except Exception as e:
         return "Worker failed with an error - " + str(e)
     # return the transformed data
-    return transformed_data
+    return data_file_path
 
 
 def on_request(ch, method, props, body):
@@ -51,22 +59,18 @@ def on_request(ch, method, props, body):
         # if the message is other than "get-ack" then carryout the task
         task_details = json.loads(body)
         context = task_details["context"]
-        data = task_details["data"]
+        data_path = task_details["data_path"]
         try:
-            response = merge_columns(context, data)
-            if isinstance(response, pd.core.frame.DataFrame):
-                response_msg = response.to_csv()
-            else:
-                response_msg = response
+            response = merge_columns(context, data_path)
             # with open("merge_col_result", "wb") as f:
             #     f.write(str(response_msg.text))
             #     s3_link = upload_result("merge_col_result")
             ch.basic_publish(exchange="",
                              routing_key=props.reply_to,
                              properties=pika.BasicProperties(correlation_id=props.correlation_id, delivery_mode=2),
-                             body=str(response_msg))
+                             body=str(response))
             ch.basic_ack(delivery_tag=method.delivery_tag)
-            print("[x] sent the response to the client..", response_msg)
+            print("[x] sent the response to the client..", response)
         except Exception as e:
             raise e
 

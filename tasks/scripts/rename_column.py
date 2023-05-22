@@ -1,4 +1,6 @@
 import json
+import os
+import uuid
 
 import pandas as pd
 import pika
@@ -19,16 +21,23 @@ binding_key = "rename_column"
 channel.queue_bind(exchange='topic_logs', queue=queue_name, routing_key=binding_key)
 
 
-def rename_column(context, data):
+def rename_column(context, data_path):
     try:
         rename_dictionary = context['rename_dict']
-        data = pd.read_json(data)
+        data = pd.read_csv(data_path)
         data.rename(columns=rename_dictionary,
           inplace=True)
+        temp_file_name = str(uuid.uuid4())
+        is_exists = os.path.exists("pipeline_temp_files")
+        if not is_exists:
+            os.mkdir("pipeline_temp_files")
+        file_name = "pipeline_temp_files/" + temp_file_name + ".csv"
+        data.to_csv(file_name, index=False)
+        data_file_path = os.path.abspath(file_name)
     except Exception as e:
         return "Worker failed with an error - " + str(e)
     # return the transformed data
-    return data
+    return data_file_path
 
 
 def on_request(ch, method, props, body):
@@ -44,22 +53,18 @@ def on_request(ch, method, props, body):
         # if the message is other than "get-ack" then carryout the task
         task_details = json.loads(body)
         context = task_details["context"]
-        data = task_details["data"]
+        data_path = task_details["data_path"]
         try:
-            response = rename_column(context, data)
-            if isinstance(response, pd.core.frame.DataFrame):
-                response_msg = response.to_csv()
-            else:
-                response_msg = response
+            response = rename_column(context, data_path)
             # with open("xyz", "wb") as f:
             #     f.write(str(response_msg.text))
             #     s3_link = upload_result("xyz")
             ch.basic_publish(exchange="",
                              routing_key=props.reply_to,
                              properties=pika.BasicProperties(correlation_id=props.correlation_id, delivery_mode=2),
-                             body=str(response_msg))
+                             body=str(response))
             ch.basic_ack(delivery_tag=method.delivery_tag)
-            print("[x] sent the response to the client..")
+            print("[x] sent the response - ", response, " to the client")
         except Exception as e:
             raise e
 

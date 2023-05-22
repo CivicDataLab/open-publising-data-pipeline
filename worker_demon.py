@@ -33,9 +33,9 @@ def main():
         print("Recieved..", body_json)
         p_id = body_json['p_id']
         logger = log_utils.get_logger_for_existing_file(p_id)
-        temp_file_name = body_json['temp_file_name']
+        data_url = body_json['data_path']
         try:
-            task_executor(p_id, temp_file_name)
+            task_executor(p_id, data_url)
         except Exception as e:
             logger.error(f"""ERROR: Worker demon failed with an error {str(e)}""")
             print (e)

@@ -18,25 +18,24 @@ from io import StringIO
 
 @task
 def split_into_files_and_upload_to_ckan(context, pipeline, task_obj):
-    data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data)
+    data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data_path)
     if not exception_flag:    # if there's no error while executing the task
         # Replace the following with your own code if the need is different.
         # Generally, to read the returned data into a dataframe and save it against the pipeline object for further tasks
         # Following is a mandatory line to set logs in prefect UI
-        print("done!!")
+        pipeline.data_path = data
         set_task_model_values(task_obj, pipeline)
     else:
         pipeline.logger.error(f"""ERROR: {data} at split_into_files_and_upload_to_ckan""")
 
 @task
 def rename_column(context, pipeline, task_obj):
-    data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data)
+    data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data_path)
     if not exception_flag:  # if there's no error while executing the task
         # Replace the following with your own code if the need is different.
         # Generally, to read the returned data into a dataframe and save it against the pipeline object for further tasks
-        df = pd.read_csv(StringIO(data), sep=',')
-        df = df.filter(regex='^(?!Unnamed)')
-        pipeline.data = df
+        pipeline.data_path = data
+        print(pipeline.data_path, "++++rename_col")
         # Following is a mandatory line to set logs in prefect UI
         set_task_model_values(task_obj, pipeline)
     else:
@@ -45,13 +44,12 @@ def rename_column(context, pipeline, task_obj):
 
 @task
 def split_column(context, pipeline, task_obj):
-    data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data)
+    data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data_path)
     if not exception_flag:  # if there's no error while executing the task
         # Replace the following with your own code if the need is different.
         # Generally, to read the returned data into a dataframe and save it against the pipeline object for further tasks
-        df = pd.read_csv(StringIO(data), sep=',')
-        df = df.filter(regex='^(?!Unnamed)')
-        pipeline.data = df
+        pipeline.data_path = data
+        print(pipeline.data_path, "++++split_col")
         # Following is a mandatory line to set logs in prefect UI
         set_task_model_values(task_obj, pipeline)
     else:
@@ -60,11 +58,11 @@ def split_column(context, pipeline, task_obj):
 
 @task
 def skip_column(context, pipeline, task_obj):
-    data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data)
+    data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data_path)
     print(exception_flag, "(((")
     if not exception_flag:
-        df = pd.read_csv(StringIO(data), sep=',')
-        pipeline.data = df
+        pipeline.data_path = data
+        print("The data path is - ", pipeline.data_path)
         # print("data%%%%", pipeline.data)
         set_task_model_values(task_obj, pipeline)
     else:
@@ -73,13 +71,11 @@ def skip_column(context, pipeline, task_obj):
 
 @task
 def merge_columns(context, pipeline, task_obj):
-    data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data)
+    data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data_path)
     if not exception_flag:
-        df = pd.read_csv(StringIO(data), sep=',')
-        df = df.filter(regex='^(?!Unnamed)')
-        pipeline.data = df
+        pipeline.data_path = data
         # pipeline.data.to_csv("merged_assam.csv")
-        # print("data%%%%", pipeline.data)
+        print(pipeline.data_path, "++++merge_col")
         set_task_model_values(task_obj, pipeline)
     else:
         pipeline.logger.error(f"""ERROR: {data} at merge_columns""")
@@ -87,104 +83,98 @@ def merge_columns(context, pipeline, task_obj):
 
 @task
 def anonymize(context, pipeline, task_obj):
-    data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data)
+    data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data_path)
     if not exception_flag:
-        df = pd.read_csv(StringIO(data), sep=',')
-        df = remove_unnamed_col(df)
-        pipeline.data = df
+        pipeline.data_path = data
         # print("data%%%%", pipeline.data)
         set_task_model_values(task_obj, pipeline)
     else:
         pipeline.logger.error(f"""ERROR: {data} at anonymize""")
 
 
-@task
-def change_format(context, pipeline, task_obj):
-    # TODO - decide on the context contents
-    file_format = context['format']
-    result_file_name = pipeline.model.pipeline_name
-    print("FORMAAAAAAT", file_format)
-    if file_format == "xml" or file_format == "XML":
-        data_string = pipeline.data.to_json(orient='records')
-        json_data = json.loads(data_string)
-        xml_data = json2xml.Json2xml(json_data).to_xml()
-        print(xml_data)
-        with open(result_file_name + '.xml', 'w') as f:
-            f.write(xml_data)
-    elif file_format == "pdf" or file_format == "PDF":
-        pipeline.data.to_html("data.html")
-        pdfkit.from_file("data.html", result_file_name + ".pdf")
-        os.remove('data.html')
-    elif file_format == "json" or file_format == "JSON":
-        data_string = pipeline.data.to_json(orient='records')
-        with open(result_file_name + ".json", "w") as f:
-            f.write(data_string)
-    set_task_model_values(task_obj, pipeline)
+# @task
+# def change_format(context, pipeline, task_obj):
+#     # TODO - decide on the context contents
+#     file_format = context['format']
+#     result_file_name = pipeline.model.pipeline_name
+#     print("FORMAAAAAAT", file_format)
+#     if file_format == "xml" or file_format == "XML":
+#         data_string = pipeline.data.to_json(orient='records')
+#         json_data = json.loads(data_string)
+#         xml_data = json2xml.Json2xml(json_data).to_xml()
+#         print(xml_data)
+#         with open(result_file_name + '.xml', 'w') as f:
+#             f.write(xml_data)
+#     elif file_format == "pdf" or file_format == "PDF":
+#         pipeline.data.to_html("data.html")
+#         pdfkit.from_file("data.html", result_file_name + ".pdf")
+#         os.remove('data.html')
+#     elif file_format == "json" or file_format == "JSON":
+#         data_string = pipeline.data.to_json(orient='records')
+#         with open(result_file_name + ".json", "w") as f:
+#             f.write(data_string)
+#     set_task_model_values(task_obj, pipeline)
 
 
 @task
 def aggregate(context, pipeline, task_obj):
-    data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data)
+    data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data_path)
     if not exception_flag:
-        df = pd.read_csv(StringIO(data), sep=',')
-        df = remove_unnamed_col(df)
-        pipeline.data = df
-        print("data%%%%", pipeline.data)
+        pipeline.data_path = data
         set_task_model_values(task_obj, pipeline)
 
 
-@task
-def query_data_resource(context, pipeline, task_obj):
-    columns = context['columns']
-    num_rows = context["rows"]
-    columns = columns.split(",")
-    if len(columns) == 1 and len(columns[0]) == 0:
-        column_selected_df = pipeline.data
-    else:
-        column_selected_df = pipeline.data.loc[:, pipeline.data.columns.isin(columns)]
-        for sc in pipeline.schema:
-            if sc["key"] not in columns:
-                sc["key"] = ""
-                sc["format"] = ""
-                sc["description"] = ""
-    # if row length is not specified return all rows
-    if num_rows == "" or int(num_rows) > len(column_selected_df):
-        final_df = column_selected_df
-    else:
-        num_rows_int = int(num_rows)
-        final_df = column_selected_df.iloc[:num_rows_int]
-    pipeline.data = final_df
-
-    data_schema = pipeline.data.convert_dtypes(infer_objects=True, convert_string=True,
-                                               convert_integer=True, convert_boolean=True, convert_floating=True)
-    names_types_dict = data_schema.dtypes.astype(str).to_dict()
-
-    set_task_model_values(task_obj, pipeline)
-
-
-@task
-def fill_missing_fields(context, pipeline, task_obj):
-    data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data)
-    if not exception_flag:
-        print(data, "???")
-    else:
-        pipeline.logger.error(f"""ERROR: {data} at fill_missing_fields""")
+# @task
+# def query_data_resource(context, pipeline, task_obj):
+#     columns = context['columns']
+#     num_rows = context["rows"]
+#     columns = columns.split(",")
+#     if len(columns) == 1 and len(columns[0]) == 0:
+#         column_selected_df = pipeline.data
+#     else:
+#         column_selected_df = pipeline.data.loc[:, pipeline.data.columns.isin(columns)]
+#         for sc in pipeline.schema:
+#             if sc["key"] not in columns:
+#                 sc["key"] = ""
+#                 sc["format"] = ""
+#                 sc["description"] = ""
+#     # if row length is not specified return all rows
+#     if num_rows == "" or int(num_rows) > len(column_selected_df):
+#         final_df = column_selected_df
+#     else:
+#         num_rows_int = int(num_rows)
+#         final_df = column_selected_df.iloc[:num_rows_int]
+#     pipeline.data = final_df
+#
+#     data_schema = pipeline.data.convert_dtypes(infer_objects=True, convert_string=True,
+#                                                convert_integer=True, convert_boolean=True, convert_floating=True)
+#     names_types_dict = data_schema.dtypes.astype(str).to_dict()
+#
+#     set_task_model_values(task_obj, pipeline)
 
 
-@task
-def sample_scraper(context, pipeline, task_obj):
-    data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data)
-    if not exception_flag:
-        print("HERE IS S3 LINK------", data)
-    else:
-        pipeline.logger.error(f"""ERROR: {data} at sample_scraper""")
+# @task
+# def fill_missing_fields(context, pipeline, task_obj):
+#     data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data)
+#     if not exception_flag:
+#         print(data, "???")
+#     else:
+#         pipeline.logger.error(f"""ERROR: {data} at fill_missing_fields""")
+#
+#
+# @task
+# def sample_scraper(context, pipeline, task_obj):
+#     data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data)
+#     if not exception_flag:
+#         print("HERE IS S3 LINK------", data)
+#     else:
+#         pipeline.logger.error(f"""ERROR: {data} at sample_scraper""")
 
 
 @task
 def db_loader(context, pipeline, task_obj):
     # data = pipeline.data.to_json()
-    print(pipeline.data)
-    data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data)
+    data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data_path)
     if not exception_flag:
         print("data loaded in db")
     else:

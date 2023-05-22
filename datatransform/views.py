@@ -101,12 +101,12 @@ def pipe_create(request):
         p_id = p.pk
         logger = log_utils.set_log_file(p_id, pipeline_name)
         transformers_list = [i for i in transformers_list if i]
-        try:
-            data = read_data(data_url)
-        except Exception as e:
-            print(str(e), "&&&&&&&")
-            logger.error(f""" Got an error while reading data from URL - {str(e)}""")
-            data = None
+        # try:
+        #     data = read_data(data_url)
+        # except Exception as e:
+        #     print(str(e), "&&&&&&&")
+        #     logger.error(f""" Got an error while reading data from URL - {str(e)}""")
+        #     data = None
 
 
         for _, each in enumerate(transformers_list):
@@ -116,14 +116,14 @@ def pipe_create(request):
 
             p = Pipeline.objects.get(pk=p_id)
             p.task_set.create(task_name=task_name, status="Created", order_no=task_order_no, context=task_context)
-        temp_file_name = uuid.uuid4().hex
+        # temp_file_name = uuid.uuid4().hex
 
-        if data is not None:
-            if not data.empty:
-                data.to_csv(temp_file_name)
+        # if data is not None:
+        #     if not data.empty:
+        #         data.to_csv(temp_file_name)
         message_body = {
             'p_id': p_id,
-            'temp_file_name': temp_file_name,
+            'data_path': data_url,
             'res_details': ""
         }
         connection = pika.BlockingConnection(
