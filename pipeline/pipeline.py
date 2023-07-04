@@ -12,9 +12,9 @@ from datatransform.models import Task
 
 
 class Pipeline(object):
-    def __init__(self, model: models.Pipeline, data: pd.DataFrame):
+    def __init__(self, model: models.Pipeline, data_path: str):
         self.model = model
-        self.data = data
+        self.data_path = data_path
         self._commands = list()
         self.schema = list()
         self.logger = log_utils.get_logger_for_existing_file(self.model.pipeline_id)

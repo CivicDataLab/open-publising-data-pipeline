@@ -24,7 +24,7 @@ def set_task_model_values(task, pipeline):
     task.output_id = '1'
     # create_resource(
     #     {'package_id': pipeline.model.output_id, 'resource_name': task.task_name, 'data': pipeline.data})
-    print({'package_id': task.output_id, 'resource_name': task.task_name, 'data': pipeline.data})
+    print({'package_id': task.output_id, 'resource_name': task.task_name, 'data': pipeline.data_path})
     task.status = "Done"
     task.save()
 
@@ -46,13 +46,14 @@ def send_error_to_prefect_cloud(e: Exception):
 
 class TasksRpcClient(object):
 
-    def __init__(self, task_name, context, data):
+    def __init__(self, task_name, context, data_path):
         self.connection = pika.BlockingConnection(
             pika.ConnectionParameters(host='localhost'))
 
         self.routing_key = task_name
+        print(self.routing_key, "%%%%%$$$$$$$$")
         self.context = context
-        self.data = data
+        self.data_path = data_path
         self.channel = self.connection.channel()
         self.channel.exchange_declare(exchange='topic_logs', exchange_type='topic')
         result = self.channel.queue_declare(queue='', exclusive=False, durable=True)
@@ -91,7 +92,7 @@ class TasksRpcClient(object):
         print(self.response, "Response before message")
         # Send the actual task oly if worker is alive
         message = {"context": self.context,
-                   "data": self.data}
+                   "data_path": self.data_path}
         self.channel.basic_publish(
             exchange='topic_logs',
             routing_key=self.routing_key,
@@ -104,14 +105,11 @@ class TasksRpcClient(object):
         return self.response
 
 
-def publish_task_and_process_result(task_obj, context, data):
-    if data is not None: # if scraper task then data will be None
-        data = data.to_json()
-    task_publisher = TasksRpcClient(task_obj.task_name, context, data)
+def publish_task_and_process_result(task_obj, context, data_path):
+    task_publisher = TasksRpcClient(task_obj.task_name, context, data_path)
     try:
         data_bytes = task_publisher.call()  # this will be a csv of bytes type
         data = str(data_bytes.decode("utf-8"))
-        print(data, "******")
     except Exception as e:
         print(str(e), "&&&&&&&")
         send_error_to_prefect_cloud(e)

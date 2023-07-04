@@ -15,7 +15,7 @@ def {task_name}(context, pipeline, task_obj):
         # Following is a mandatory line to set logs in prefect UI
         set_task_model_values(task_obj, pipeline) 
     else:
-        # write Exception handling
+       pipeline.logger.error(ERROR: at {task_name})
 """)
     return template
 
