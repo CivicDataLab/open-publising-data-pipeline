@@ -6,12 +6,12 @@ def generate_task_publisher(task_name):
     template = Template(f"""
 @task
 def {task_name}(context, pipeline, task_obj):
-    data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data)
+    data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data_path)
     if not exception_flag:    # if there's no error while executing the task
         # Replace the following with your own code if the need is different. 
         # Generally, to read the returned data into a dataframe and save it against the pipeline object for further tasks
-        df = pd.read_csv(StringIO(data), sep=',')
-        pipeline.data = df
+        #df = pd.read_csv(StringIO(data), sep=',')
+        pipeline.data_path = data
         # Following is a mandatory line to set logs in prefect UI
         set_task_model_values(task_obj, pipeline) 
     else:

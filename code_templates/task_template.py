@@ -25,13 +25,14 @@ binding_key = "{task_name}"
 channel.queue_bind(exchange='topic_logs', queue=queue_name, routing_key=binding_key)
 
 
-def {task_name}(context, data):
+def {task_name}(context, data_path):
     try:
-        # write your logic here
+        # write your logic here. Save the output/input to your next task in a file - data_file_path and send that back to publisher
+        data_file_path = ""
     except Exception as e:
         return "Worker failed with an error - " + str(e)
     # return the transformed data 
-    return transformed_data
+    return data_file_path
 
 
 def on_request(ch, method, props, body):
@@ -47,7 +48,7 @@ def on_request(ch, method, props, body):
         # if the message is other than "get-ack" then carryout the task
         task_details = json.loads(body)
         context = task_details["context"]
-        data = task_details["data"]
+        data_path = task_details["data_path"]
         try:
             response = {task_name}(context, data)
             if isinstance(response, pd.core.frame.DataFrame):
