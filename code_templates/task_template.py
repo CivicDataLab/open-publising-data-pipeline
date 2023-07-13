@@ -50,7 +50,7 @@ def on_request(ch, method, props, body):
         context = task_details["context"]
         data_path = task_details["data_path"]
         try:
-            response = {task_name}(context, data)
+            response = {task_name}(context, data_path)
             if isinstance(response, pd.core.frame.DataFrame):
                 response_msg = response.to_csv()
             else:
