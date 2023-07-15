@@ -1,12 +1,10 @@
-import json
-import os
 from datatransform.models import Pipeline
 from pipeline import pipeline
-import pandas as pd
-from tasks import prefect_tasks
 
+from projects.generic_flow.generic_transformation_tasks import prefect_tasks
+from projects.dpg_pipeline.mgnrega_flow import *
 
-def task_executor(pipeline_id, data_url):
+def task_executor(pipeline_id, data_url, project):
     print("inside te***")
     print("pipeline_id is ", pipeline_id)
     try:
@@ -29,7 +27,10 @@ def task_executor(pipeline_id, data_url):
             new_pipeline.add(task)
 
         [execution_from_model(task) for task in tasks]
-        prefect_tasks.pipeline_executor(new_pipeline)  # pipeline_executor(task.task_name, context)
+        if project == "generic_transformations":
+            prefect_tasks.pipeline_executor(new_pipeline)  # pipeline_executor(task.task_name, context)
+        elif project == "dpg_mgnrega":
+            pass
         return
 
     except Exception as e:

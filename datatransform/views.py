@@ -94,6 +94,7 @@ def pipe_create(request):
         transformers_list = post_data.get('transformers_list', None)
         data_url = post_data.get('data_url', None)
         pipeline_name = post_data.get('pipeline_name', '')
+        project = post_data.get('project', '') # flag to direct to the exact prefect flow
         p = Pipeline(status="Created", pipeline_name=pipeline_name)
 
         p.save()
@@ -124,7 +125,8 @@ def pipe_create(request):
         message_body = {
             'p_id': p_id,
             'data_path': data_url,
-            'res_details': ""
+            'res_details': "",
+            'project': project
         }
         connection = pika.BlockingConnection(
             pika.ConnectionParameters(host='localhost'))
