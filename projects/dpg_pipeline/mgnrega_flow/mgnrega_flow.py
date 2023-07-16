@@ -31,13 +31,8 @@ def mgnrega_transformer(context, pipeline, task_obj):
        pipeline.logger.error("ERROR: at mgnrega_transformer")
 
 
-
-
-
 @flow
 def mgnrega_pipeline(pipeline):
-    mgnrega_scraper("a", "b", "x")
-    mgnrega_transformer("c","d", "y")
     print("setting ", pipeline.model.pipeline_name, " status to In Progress")
     pipeline.model.status = "In Progress"
     pipeline.logger.info(f"""INFO: setting pipeline status to - In Progress""")
@@ -66,5 +61,3 @@ def mgnrega_pipeline(pipeline):
     # print("Data after pipeline execution\n", pipeline.data)
     return
 
-if __name__ == "__main__":
-    mgnrega_pipeline(None)

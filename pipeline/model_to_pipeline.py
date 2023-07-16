@@ -1,5 +1,6 @@
 from datatransform.models import Pipeline
 from pipeline import pipeline
+from projects.dpg_pipeline.mgnrega_flow.mgnrega_flow import mgnrega_pipeline
 
 from projects.generic_flow.generic_transformation_tasks import prefect_tasks
 from projects.dpg_pipeline.mgnrega_flow import *
@@ -30,7 +31,7 @@ def task_executor(pipeline_id, data_url, project):
         if project == "generic_transformations":
             prefect_tasks.pipeline_executor(new_pipeline)  # pipeline_executor(task.task_name, context)
         elif project == "dpg_mgnrega":
-            pass
+            mgnrega_pipeline(new_pipeline)
         return
 
     except Exception as e:
