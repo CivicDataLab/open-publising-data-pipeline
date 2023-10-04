@@ -44,11 +44,16 @@ def send_error_to_prefect_cloud(e: Exception):
     prefect_logger.error(str(e))
 
 
+def send_info_to_prefect_cloud(e: str):
+    prefect_logger = get_run_logger()
+    prefect_logger.info(str(e))
+
+
 class TasksRpcClient(object):
 
     def __init__(self, task_name, context, data_path):
         self.connection = pika.BlockingConnection(
-            pika.ConnectionParameters(host='localhost'))
+            pika.ConnectionParameters(host='localhost',heartbeat=999))
 
         self.routing_key = task_name
         print(self.routing_key, "%%%%%$$$$$$$$")
