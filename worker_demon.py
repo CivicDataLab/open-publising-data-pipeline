@@ -23,7 +23,7 @@ except Exception as e:
 # print(pipeline_object.pipeline_name)
 
 def main():
-    connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost',heartbeat=65535))
+    connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost', heartbeat=65535))
     channel = connection.channel()
 
     channel.queue_declare(queue='pipeline_ui_queue')

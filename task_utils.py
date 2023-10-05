@@ -33,7 +33,6 @@ def remove_unnamed_col(data_frame):
     return data_frame.loc[:, ~data_frame.columns.str.contains('^Unnamed')]
 
 
-
 def populate_task_schema(key_entry, format_entry, description_entry):
     schema_dict = {"key": key_entry, "format": format_entry, "description": description_entry}
     return schema_dict
