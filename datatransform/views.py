@@ -128,17 +128,17 @@ def pipe_create(request):
             'res_details': "",
             'project': project
         }
-        task_executor(p_id, data_url, project)
-        # connection = pika.BlockingConnection(
-        #     pika.ConnectionParameters(host='localhost'))
-        # channel = connection.channel()
-        #
-        # channel.queue_declare(queue='pipeline_ui_queue')
-        # channel.basic_publish(exchange='',
-        #                       routing_key='pipeline_ui_queue',
-        #                       body=json.dumps(message_body))
+        # task_executor(p_id, data_url, project)
+        connection = pika.BlockingConnection(
+            pika.ConnectionParameters(host='localhost'))
+        channel = connection.channel()
+
+        channel.queue_declare(queue='pipeline_ui_queue')
+        channel.basic_publish(exchange='',
+                              routing_key='pipeline_ui_queue',
+                              body=json.dumps(message_body))
         print(f''' Sent {p_id}, {data_url}, {project} to task executor''' )
-        #connection.close()
+        connection.close()
         logger.info(f"""INFO: sent {message_body} to the worker demon""")
         context = {"result": p_id, "Success": True}
         return JsonResponse(context, safe=False)
