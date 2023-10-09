@@ -1,10 +1,13 @@
 from datatransform.models import Pipeline
+from background_task import background
 from pipeline import pipeline
 from projects.dpg_pipeline.mgnrega_flow.mgnrega_flow import mgnrega_pipeline
 from projects.IDS_DRR.ids_drr_flow import ids_drr_flow
 from projects.generic_flow.generic_transformation_tasks import prefect_tasks
 from projects.dpg_pipeline.mgnrega_flow import *
 
+
+@background(queue='pipeline_queue')
 def task_executor(pipeline_id, data_url, project):
     print("inside te***")
     print("pipeline_id is ", pipeline_id)
