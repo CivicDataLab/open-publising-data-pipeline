@@ -3,6 +3,17 @@ from task_utils import *
 
 
 @task
+def sentinel_upload_to_s3(context, pipeline, task_obj):
+    data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data_path)
+    if not exception_flag:    # if there's no error while executing the task
+        pipeline.data_path = data
+        # Following is a mandatory line to set logs in prefect UI
+        set_task_model_values(task_obj, pipeline)
+    else:
+       pipeline.logger.error("ERROR: at sentinel_upload_to_s3")
+
+
+@task
 def sentinel(context, pipeline, task_obj):
     """
     Input - date_start in yyyy-MM-dd format
