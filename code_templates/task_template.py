@@ -12,7 +12,7 @@ import pika
 #from tasks.scripts.s3_utils import upload_result
 
 connection = pika.BlockingConnection(
-    pika.ConnectionParameters(host='localhost'))
+    pika.ConnectionParameters(host='localhost', heartbeat=0))
 
 channel = connection.channel()
 channel.exchange_declare(exchange='topic_logs', exchange_type='topic')

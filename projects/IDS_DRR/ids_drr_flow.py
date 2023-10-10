@@ -3,17 +3,27 @@ from task_utils import *
 
 
 @task
-def sleeper(context, pipeline, task_obj):
+def sentinel(context, pipeline, task_obj):
+    """
+    Input - date_start in yyyy-MM-dd format
+            date_end in yyyy-MM-dd format
+    context would look like following
+    {
+        "date_start": "2023-01-01"
+        "date_end": "2023-06-01"
+    }
+
+    Output - The task creates files and folders in the server. Nothing is returned.
+    """
     data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data_path)
-    if not exception_flag:    # if there's no error while executing the task
-        # Replace the following with your own code if the need is different.
-        # Generally, to read the returned data into a dataframe and save it against the pipeline object for further tasks
-        #df = pd.read_csv(StringIO(data), sep=',')
+    if not exception_flag:  # if there's no error while executing the task
         pipeline.data_path = data
         # Following is a mandatory line to set logs in prefect UI
         set_task_model_values(task_obj, pipeline)
     else:
-       pipeline.logger.error("ERROR: at sleeper")
+        pipeline.logger.error("ERROR: at sentinel")
+
+
 @task
 def bhuvan_get_dates(context, pipeline, task_obj):
     """

@@ -52,7 +52,7 @@ class TasksRpcClient(object):
 
     def __init__(self, task_name, context, data_path):
         self.connection = pika.BlockingConnection(
-            pika.ConnectionParameters(host='localhost',heartbeat=999))
+            pika.ConnectionParameters(host='localhost',heartbeat=0))
 
         self.routing_key = task_name
         print(self.routing_key, "%%%%%$$$$$$$$")
