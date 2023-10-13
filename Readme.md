@@ -39,7 +39,7 @@ The data pipelines should now be ready to operate efficiently.
 
 ## Project Flow
 
-![Flow chart](generic_data_pipeline.drawio)
+![Flow chart](flow_diagram.png)
 
 
 ## Background tasks 
