@@ -1,7 +1,7 @@
 import pika
 import requests
 from background_task.models import CompletedTask
-
+from pipeline.model_to_pipeline import task_executor
 import log_utils
 from .models import Task, Pipeline
 # Create your views here.
@@ -94,6 +94,7 @@ def pipe_create(request):
         transformers_list = post_data.get('transformers_list', None)
         data_url = post_data.get('data_url', None)
         pipeline_name = post_data.get('pipeline_name', '')
+        project = post_data.get('project', '') # flag to direct to the exact prefect flow
         p = Pipeline(status="Created", pipeline_name=pipeline_name)
 
         p.save()
@@ -124,8 +125,10 @@ def pipe_create(request):
         message_body = {
             'p_id': p_id,
             'data_path': data_url,
-            'res_details': ""
+            'res_details': "",
+            'project': project
         }
+        # task_executor(p_id, data_url, project)
         connection = pika.BlockingConnection(
             pika.ConnectionParameters(host='localhost'))
         channel = connection.channel()
@@ -134,7 +137,7 @@ def pipe_create(request):
         channel.basic_publish(exchange='',
                               routing_key='pipeline_ui_queue',
                               body=json.dumps(message_body))
-        print(" [x] Sent %r" % message_body)
+        print(f''' Sent {p_id}, {data_url}, {project} to task executor''' )
         connection.close()
         logger.info(f"""INFO: sent {message_body} to the worker demon""")
         context = {"result": p_id, "Success": True}

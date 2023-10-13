@@ -39,7 +39,7 @@ Following are the steps to be followed to add a new task to the pipeline.
 1. Define your task name and the context (i.e. necessary information to perform the task).
 2. The name of the publisher method, and the name of the task should be same. 
 3. Generate publisher code by running `python -m code_templates.publisher_template --task_name '<task_name_here>'` in a terminal.
-Paste the generated code in [prefect_tasks](tasks/prefect_tasks.py)
+Paste the generated code in [prefect_tasks](projects/generic_flow/generic_transformation_tasks/prefect_tasks.py)
   
 ``data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data)  
   if not exception_flag:``

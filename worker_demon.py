@@ -23,7 +23,7 @@ except Exception as e:
 # print(pipeline_object.pipeline_name)
 
 def main():
-    connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
+    connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost', heartbeat=65535))
     channel = connection.channel()
 
     channel.queue_declare(queue='pipeline_ui_queue')
@@ -34,8 +34,9 @@ def main():
         p_id = body_json['p_id']
         logger = log_utils.get_logger_for_existing_file(p_id)
         data_url = body_json['data_path']
+        project = body_json['project']
         try:
-            task_executor(p_id, data_url)
+            task_executor(p_id, data_url, project)
         except Exception as e:
             logger.error(f"""ERROR: Worker demon failed with an error {str(e)}""")
             print (e)
