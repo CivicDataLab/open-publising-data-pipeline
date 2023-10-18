@@ -49,7 +49,7 @@ def data_transformation_department(context, pipeline, task_obj):
 
 
 @flow
-def mgnrega_pipeline(pipeline):
+def data_for_districts_pipeline(pipeline):
     print("setting ", pipeline.model.pipeline_name, " status to In Progress")
     pipeline.model.status = "In Progress"
     pipeline.logger.info(f"""INFO: setting pipeline status to - In Progress""")
