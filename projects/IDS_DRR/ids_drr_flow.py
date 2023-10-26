@@ -2,6 +2,93 @@ from prefect import task, flow
 from task_utils import *
 
 
+# {
+#     "pipeline_name": "pipe14",
+#     "data_url": "",
+#     "project": "ids-drr",
+#     "transformers_list": [
+#         {
+#             "name": "tenders_scrape_data",
+#             "order_no": 1,
+#             "context": {
+#                 "year": "2022",
+#                 "month": "4"
+#             }
+#         },
+#         {
+#             "name": "tenders_scrape_data",
+#             "order_no": 1,
+#             "context": {
+#
+#             }
+#         }
+#     ]
+# }
+
+@task
+def tenders_transformer(context, pipeline, task_obj):
+    """
+    Input - Nothing
+    Output - Returns nothing
+    """
+    data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data_path)
+    if not exception_flag:  # if there's no error while executing the task
+        # Replace the following with your own code if the need is different.
+        # Generally, to read the returned data into a dataframe and save it against the pipeline object for further tasks
+        # df = pd.read_csv(StringIO(data), sep=',')
+        pipeline.data_path = data
+        # Following is a mandatory line to set logs in prefect UI
+        set_task_model_values(task_obj, pipeline)
+    else:
+        pipeline.logger.error("ERROR: at tenders_transformer")
+
+
+@task
+def tenders_geocode_rc(context, pipeline, task_obj):
+    """
+    Input - Nothing
+    Output - Returns nothing
+    """
+    data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data_path)
+    if not exception_flag:  # if there's no error while executing the task
+        # Replace the following with your own code if the need is different.
+        # Generally, to read the returned data into a dataframe and save it against the pipeline object for further tasks
+        # df = pd.read_csv(StringIO(data), sep=',')
+        pipeline.data_path = data
+        # Following is a mandatory line to set logs in prefect UI
+        set_task_model_values(task_obj, pipeline)
+    else:
+        pipeline.logger.error("ERROR: at tenders_geocode_rc")
+
+
+@task
+def tenders_geocode_district(context, pipeline, task_obj):
+    data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data_path)
+    if not exception_flag:  # if there's no error while executing the task
+        # Replace the following with your own code if the need is different.
+        # Generally, to read the returned data into a dataframe and save it against the pipeline object for further tasks
+        # df = pd.read_csv(StringIO(data), sep=',')
+        pipeline.data_path = data
+        # Following is a mandatory line to set logs in prefect UI
+        set_task_model_values(task_obj, pipeline)
+    else:
+        pipeline.logger.error("ERROR: at tenders_geocode_district")
+
+
+@task
+def tenders_get_flood_tenders(context, pipeline, task_obj):
+    data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data_path)
+    if not exception_flag:  # if there's no error while executing the task
+        # Replace the following with your own code if the need is different.
+        # Generally, to read the returned data into a dataframe and save it against the pipeline object for further tasks
+        # df = pd.read_csv(StringIO(data), sep=',')
+        pipeline.data_path = data
+        # Following is a mandatory line to set logs in prefect UI
+        set_task_model_values(task_obj, pipeline)
+    else:
+        pipeline.logger.error("ERROR: at tenders_get_flood_tenders")
+
+
 @task
 def tenders_concat_tenders(context, pipeline, task_obj):
     data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data_path)
