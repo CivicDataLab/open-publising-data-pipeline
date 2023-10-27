@@ -7,30 +7,37 @@ Actual tasks can be found under tasks/scripts which can be implemented in any la
 
 import os
 import re
+from io import StringIO
 
 import pandas as pd
 import pdfkit
 from json2xml import json2xml
-from prefect import task, flow
+from prefect import flow, task
 from task_utils import *
-from io import StringIO
 
 
 @task
 def split_into_files_and_upload_to_ckan(context, pipeline, task_obj):
-    data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data_path)
-    if not exception_flag:    # if there's no error while executing the task
+    data, exception_flag = publish_task_and_process_result(
+        task_obj, context, pipeline.data_path
+    )
+    if not exception_flag:  # if there's no error while executing the task
         # Replace the following with your own code if the need is different.
         # Generally, to read the returned data into a dataframe and save it against the pipeline object for further tasks
         # Following is a mandatory line to set logs in prefect UI
         pipeline.data_path = data
         set_task_model_values(task_obj, pipeline)
     else:
-        pipeline.logger.error(f"""ERROR: {data} at split_into_files_and_upload_to_ckan""")
+        pipeline.logger.error(
+            f"""ERROR: {data} at split_into_files_and_upload_to_ckan"""
+        )
+
 
 @task
 def rename_column(context, pipeline, task_obj):
-    data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data_path)
+    data, exception_flag = publish_task_and_process_result(
+        task_obj, context, pipeline.data_path
+    )
     if not exception_flag:  # if there's no error while executing the task
         # Replace the following with your own code if the need is different.
         # Generally, to read the returned data into a dataframe and save it against the pipeline object for further tasks
@@ -44,7 +51,9 @@ def rename_column(context, pipeline, task_obj):
 
 @task
 def split_column(context, pipeline, task_obj):
-    data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data_path)
+    data, exception_flag = publish_task_and_process_result(
+        task_obj, context, pipeline.data_path
+    )
     if not exception_flag:  # if there's no error while executing the task
         # Replace the following with your own code if the need is different.
         # Generally, to read the returned data into a dataframe and save it against the pipeline object for further tasks
@@ -58,7 +67,9 @@ def split_column(context, pipeline, task_obj):
 
 @task
 def skip_column(context, pipeline, task_obj):
-    data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data_path)
+    data, exception_flag = publish_task_and_process_result(
+        task_obj, context, pipeline.data_path
+    )
     print(exception_flag, "(((")
     if not exception_flag:
         pipeline.data_path = data
@@ -71,7 +82,9 @@ def skip_column(context, pipeline, task_obj):
 
 @task
 def merge_columns(context, pipeline, task_obj):
-    data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data_path)
+    data, exception_flag = publish_task_and_process_result(
+        task_obj, context, pipeline.data_path
+    )
     if not exception_flag:
         pipeline.data_path = data
         # pipeline.data.to_csv("merged_assam.csv")
@@ -83,7 +96,9 @@ def merge_columns(context, pipeline, task_obj):
 
 @task
 def anonymize(context, pipeline, task_obj):
-    data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data_path)
+    data, exception_flag = publish_task_and_process_result(
+        task_obj, context, pipeline.data_path
+    )
     if not exception_flag:
         pipeline.data_path = data
         # print("data%%%%", pipeline.data)
@@ -118,7 +133,9 @@ def anonymize(context, pipeline, task_obj):
 
 @task
 def aggregate(context, pipeline, task_obj):
-    data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data_path)
+    data, exception_flag = publish_task_and_process_result(
+        task_obj, context, pipeline.data_path
+    )
     if not exception_flag:
         pipeline.data_path = data
         set_task_model_values(task_obj, pipeline)
@@ -174,7 +191,9 @@ def aggregate(context, pipeline, task_obj):
 @task
 def db_loader(context, pipeline, task_obj):
     # data = pipeline.data.to_json()
-    data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data_path)
+    data, exception_flag = publish_task_and_process_result(
+        task_obj, context, pipeline.data_path
+    )
     if not exception_flag:
         print("data loaded in db")
     else:
@@ -200,13 +219,17 @@ def pipeline_executor(pipeline):
     for task in tasks_objects:
         if task.status == "Failed":
             pipeline.model.status = "Failed"
-            pipeline.logger.info(f"""INFO: The task - {task.task_name} was failed. Set Pipeline status to failed.""")
+            pipeline.logger.info(
+                f"""INFO: The task - {task.task_name} was failed. Set Pipeline status to failed."""
+            )
             pipeline.model.save()
             break
     if pipeline.model.status != "Failed":
         pipeline.model.status = "Done"
         pipeline.logger.info(f"""INFO: Set Pipeline status to Done.""")
         pipeline.model.save()
-    pipeline.model.output_id = str(pipeline.model.pipeline_id) + "_" + pipeline.model.status
+    pipeline.model.output_id = (
+        str(pipeline.model.pipeline_id) + "_" + pipeline.model.status
+    )
     # print("Data after pipeline execution\n", pipeline.data)
     return

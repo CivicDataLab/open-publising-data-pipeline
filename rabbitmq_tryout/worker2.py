@@ -2,6 +2,7 @@ import time
 
 import pika
 
+
 class Worker:
     def __init__(self, binding_key):
         self.binding_key = binding_key

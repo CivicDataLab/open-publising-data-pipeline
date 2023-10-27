@@ -1,5 +1,7 @@
-import pika
 import uuid
+
+import pika
+
 
 class Publisher:
     def __init__(self):

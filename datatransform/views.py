@@ -1,39 +1,93 @@
+import json
+import uuid
+
+import log_utils
+import pandas as pd
 import pika
 import requests
 from background_task.models import CompletedTask
+from django.http import HttpResponse, JsonResponse
 from pipeline.model_to_pipeline import task_executor
-import log_utils
-from .models import Task, Pipeline
+
+from .models import Pipeline, Task
+
 # Create your views here.
 
-from django.http import JsonResponse, HttpResponse
-import pandas as pd
-import json
-import uuid
 
 
 def transformer_list(request):
     transformers = [
-        {"name": "skip_column", "context": [
-            {"name": "columns", "type": "field_multi", "desc": "Please select column names to be deleted"}]},
-        {"name": "merge_columns", "context": [
-            {"name": "column1", "type": "field_single", "desc": "Please select first column name"},
-            {"name": "column2", "type": "field_single", "desc": "Please select second column name"},
-            {"name": "output_column", "type": "string", "desc": "Please enter output column name"},
-            {"name": "separator", "type": "string", "desc": "Please enter separator char/string"}
-        ]},
-        {"name": "change_format", "context": [
-            {"name": "format", "type": "string", "desc": "xml/json/pdf"}]},
-        {"name": "anonymize", "context": [
-            {"name": "to_replace", "type": "string", "desc": "String to be replaced"},
-            {"name": "replace_val", "type": "string", "desc": "Replacement string"},
-            {"name": "column", "type": "field_single", "desc": "Please select column name to perform operation"}
-        ]},
-        {"name": "aggregate", "context": [
-            {"name": "index", "type": "string", "desc": "Field that is needed as index"},
-            {"name": "columns", "type": "field_multi", "desc": "Select column names"},
-            {"name": "values", "type": "string", "desc": "values"}
-        ]}
+        {
+            "name": "skip_column",
+            "context": [
+                {
+                    "name": "columns",
+                    "type": "field_multi",
+                    "desc": "Please select column names to be deleted",
+                }
+            ],
+        },
+        {
+            "name": "merge_columns",
+            "context": [
+                {
+                    "name": "column1",
+                    "type": "field_single",
+                    "desc": "Please select first column name",
+                },
+                {
+                    "name": "column2",
+                    "type": "field_single",
+                    "desc": "Please select second column name",
+                },
+                {
+                    "name": "output_column",
+                    "type": "string",
+                    "desc": "Please enter output column name",
+                },
+                {
+                    "name": "separator",
+                    "type": "string",
+                    "desc": "Please enter separator char/string",
+                },
+            ],
+        },
+        {
+            "name": "change_format",
+            "context": [{"name": "format", "type": "string", "desc": "xml/json/pdf"}],
+        },
+        {
+            "name": "anonymize",
+            "context": [
+                {
+                    "name": "to_replace",
+                    "type": "string",
+                    "desc": "String to be replaced",
+                },
+                {"name": "replace_val", "type": "string", "desc": "Replacement string"},
+                {
+                    "name": "column",
+                    "type": "field_single",
+                    "desc": "Please select column name to perform operation",
+                },
+            ],
+        },
+        {
+            "name": "aggregate",
+            "context": [
+                {
+                    "name": "index",
+                    "type": "string",
+                    "desc": "Field that is needed as index",
+                },
+                {
+                    "name": "columns",
+                    "type": "field_multi",
+                    "desc": "Select column names",
+                },
+                {"name": "values", "type": "string", "desc": "values"},
+            ],
+        },
     ]
 
     context = {"result": transformers, "Success": True}
@@ -41,7 +95,7 @@ def transformer_list(request):
 
 
 def pipeline_filter(request):
-    dataset_id = request.GET.get('datasetId', None)
+    dataset_id = request.GET.get("datasetId", None)
     pipeline_data = list(Pipeline.objects.filter(dataset_id=dataset_id))
     resp_list = []
     for each in pipeline_data:
@@ -50,15 +104,25 @@ def pipeline_filter(request):
         tasks_list = []
         for task in task_data:
             t_data = {
-                'task_id': task.task_id, 'task_name': task.task_name, 'context': task.context,
-                'status': task.status, 'order_no': task.order_no, 'created_at': task.created_at,
-                'result_url': task.result_url, 'output_id': task.output_id
+                "task_id": task.task_id,
+                "task_name": task.task_name,
+                "context": task.context,
+                "status": task.status,
+                "order_no": task.order_no,
+                "created_at": task.created_at,
+                "result_url": task.result_url,
+                "output_id": task.output_id,
             }
             tasks_list.append(t_data)
-        data = {'pipeline_id': each.pipeline_id, 'pipeline_name': each.pipeline_name,
-                'output_id': each.output_id, 'created_at': each.created_at,
-                'status': each.status, 'resource_id': each.resource_id, 'tasks': tasks_list
-                }
+        data = {
+            "pipeline_id": each.pipeline_id,
+            "pipeline_name": each.pipeline_name,
+            "output_id": each.output_id,
+            "created_at": each.created_at,
+            "status": each.status,
+            "resource_id": each.resource_id,
+            "tasks": tasks_list,
+        }
         resp_list.append(data)
 
     context = {"result": resp_list, "Success": True}
@@ -71,16 +135,37 @@ def pipe_list(request):
 
     data = {}
     for each in task_data:
-        p = Pipeline.objects.get(pk=each['Pipeline_id_id'])
-        res_url = "https://ndp.ckan.civicdatalab.in/dataset/" + p.output_id + "/resource/" + each['output_id']
+        p = Pipeline.objects.get(pk=each["Pipeline_id_id"])
+        res_url = (
+            "https://ndp.ckan.civicdatalab.in/dataset/"
+            + p.output_id
+            + "/resource/"
+            + each["output_id"]
+        )
 
-        if each['Pipeline_id_id'] not in data:
-            data[each['Pipeline_id_id']] = {'date': each['created_at'], 'status': p.status, 'name': p.pipeline_name,
-                                            'pipeline': [{"name": each['task_name'], "step": each['order_no'],
-                                                          "status": each['status'], "result": res_url}]}
+        if each["Pipeline_id_id"] not in data:
+            data[each["Pipeline_id_id"]] = {
+                "date": each["created_at"],
+                "status": p.status,
+                "name": p.pipeline_name,
+                "pipeline": [
+                    {
+                        "name": each["task_name"],
+                        "step": each["order_no"],
+                        "status": each["status"],
+                        "result": res_url,
+                    }
+                ],
+            }
         else:
-            data[each['Pipeline_id_id']]['pipeline'].append(
-                {"name": each['task_name'], "step": each['order_no'], "status": each['status'], "result": res_url})
+            data[each["Pipeline_id_id"]]["pipeline"].append(
+                {
+                    "name": each["task_name"],
+                    "step": each["order_no"],
+                    "status": each["status"],
+                    "result": res_url,
+                }
+            )
 
     context = {"result": data, "Success": True}
 
@@ -88,13 +173,15 @@ def pipe_list(request):
 
 
 def pipe_create(request):
-    if request.method == 'POST':
-        post_data = json.loads(request.body.decode('utf-8'))
+    if request.method == "POST":
+        post_data = json.loads(request.body.decode("utf-8"))
         print("#####", post_data)
-        transformers_list = post_data.get('transformers_list', None)
-        data_url = post_data.get('data_url', None)
-        pipeline_name = post_data.get('pipeline_name', '')
-        project = post_data.get('project', '') # flag to direct to the exact prefect flow
+        transformers_list = post_data.get("transformers_list", None)
+        data_url = post_data.get("data_url", None)
+        pipeline_name = post_data.get("pipeline_name", "")
+        project = post_data.get(
+            "project", ""
+        )  # flag to direct to the exact prefect flow
         p = Pipeline(status="Created", pipeline_name=pipeline_name)
 
         p.save()
@@ -109,35 +196,40 @@ def pipe_create(request):
         #     logger.error(f""" Got an error while reading data from URL - {str(e)}""")
         #     data = None
 
-
         for _, each in enumerate(transformers_list):
-            task_name = each.get('name', None)
-            task_order_no = each.get('order_no', None)
-            task_context = each.get('context', None)
+            task_name = each.get("name", None)
+            task_order_no = each.get("order_no", None)
+            task_context = each.get("context", None)
 
             p = Pipeline.objects.get(pk=p_id)
-            p.task_set.create(task_name=task_name, status="Created", order_no=task_order_no, context=task_context)
+            p.task_set.create(
+                task_name=task_name,
+                status="Created",
+                order_no=task_order_no,
+                context=task_context,
+            )
         # temp_file_name = uuid.uuid4().hex
 
         # if data is not None:
         #     if not data.empty:
         #         data.to_csv(temp_file_name)
         message_body = {
-            'p_id': p_id,
-            'data_path': data_url,
-            'res_details': "",
-            'project': project
+            "p_id": p_id,
+            "data_path": data_url,
+            "res_details": "",
+            "project": project,
         }
         # task_executor(p_id, data_url, project)
         connection = pika.BlockingConnection(
-            pika.ConnectionParameters(host='localhost'))
+            pika.ConnectionParameters(host="localhost")
+        )
         channel = connection.channel()
 
-        channel.queue_declare(queue='pipeline_ui_queue')
-        channel.basic_publish(exchange='',
-                              routing_key='pipeline_ui_queue',
-                              body=json.dumps(message_body))
-        print(f''' Sent {p_id}, {data_url}, {project} to task executor''' )
+        channel.queue_declare(queue="pipeline_ui_queue")
+        channel.basic_publish(
+            exchange="", routing_key="pipeline_ui_queue", body=json.dumps(message_body)
+        )
+        print(f""" Sent {p_id}, {data_url}, {project} to task executor""")
         connection.close()
         logger.info(f"""INFO: sent {message_body} to the worker demon""")
         context = {"result": p_id, "Success": True}

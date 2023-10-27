@@ -1,6 +1,5 @@
-from prefect import task, flow
+from prefect import flow, task
 from task_utils import *
-
 
 # {
 #     "pipeline_name": "pipe14",

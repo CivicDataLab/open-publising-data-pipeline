@@ -1,11 +1,11 @@
-import requests
 import json
 
+import requests
 
-file_path = 'data110.csv'
-file      = open(file_path, 'rb')
-variables = {"file": None}  
-map       = json.dumps({ "0": ["variables.file"] })
+file_path = "data110.csv"
+file = open(file_path, "rb")
+variables = {"file": None}
+map = json.dumps({"0": ["variables.file"]})
 
 
 query = f"""
@@ -19,16 +19,17 @@ query = f"""
         resource {{ id }}
     }}
     }}"""
-    
-operations = json.dumps({
-  "query": query,
-  "variables": variables
-})
+
+operations = json.dumps({"query": query, "variables": variables})
 
 
-
-headers = {} 
-response = requests.post('http://idpbe.civicdatalab.in/graphql', data = {"operations": operations,"map": map}, files = {"0" : file}, headers=headers)
+headers = {}
+response = requests.post(
+    "http://idpbe.civicdatalab.in/graphql",
+    data={"operations": operations, "map": map},
+    files={"0": file},
+    headers=headers,
+)
 
 response_json = json.loads(response.text)
 print(response_json)

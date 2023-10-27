@@ -4,25 +4,24 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('datatransform', '0003_pipeline_status'),
+        ("datatransform", "0003_pipeline_status"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='pipeline',
-            name='output_id',
-            field=models.CharField(default='', max_length=200),
+            model_name="pipeline",
+            name="output_id",
+            field=models.CharField(default="", max_length=200),
         ),
         migrations.AddField(
-            model_name='pipeline',
-            name='pipeline_name',
-            field=models.CharField(default='', max_length=100),
+            model_name="pipeline",
+            name="pipeline_name",
+            field=models.CharField(default="", max_length=100),
         ),
         migrations.AddField(
-            model_name='task',
-            name='output_id',
-            field=models.CharField(default='', max_length=200),
+            model_name="task",
+            name="output_id",
+            field=models.CharField(default="", max_length=200),
         ),
     ]

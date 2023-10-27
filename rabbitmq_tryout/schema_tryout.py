@@ -1,6 +1,5 @@
-from prefect import flow, task, get_run_logger
+from prefect import flow, get_run_logger, task
 from prefect.filesystems import LocalFileSystem
-
 
 
 @task

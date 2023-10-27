@@ -1,11 +1,14 @@
-from prefect import get_run_logger
 import json
 import uuid
 
 import pika
+from prefect import get_run_logger
 
 
 def get_task_names(task_obj_list):
+    """
+    Unpacks task names received from the API call.
+    """
     task_names = []
     for obj in task_obj_list:
         task_names.append(obj.task_name)
@@ -13,61 +16,84 @@ def get_task_names(task_obj_list):
 
 
 def get_task_contexts(task_obj_list):
+    """
+    Unpacks the context from task json received from the API call.
+    """
     contexts = []
     for obj in task_obj_list:
-        context = json.loads(obj.context.replace('\'', '"'))
+        context = json.loads(obj.context.replace("'", '"'))
         contexts.append(context)
     return contexts
 
 
 def set_task_model_values(task, pipeline):
-    task.output_id = '1'
+    """
+    Sets the tasks object value in the Django model.
+    """
+    task.output_id = "1"
     # create_resource(
     #     {'package_id': pipeline.model.output_id, 'resource_name': task.task_name, 'data': pipeline.data})
-    print({'package_id': task.output_id, 'resource_name': task.task_name, 'data': pipeline.data_path})
+    print(
+        {
+            "package_id": task.output_id,
+            "resource_name": task.task_name,
+            "data": pipeline.data_path,
+        }
+    )
     task.status = "Done"
     task.save()
 
 
 def remove_unnamed_col(data_frame):
-    return data_frame.loc[:, ~data_frame.columns.str.contains('^Unnamed')]
+    return data_frame.loc[:, ~data_frame.columns.str.contains("^Unnamed")]
 
 
 def populate_task_schema(key_entry, format_entry, description_entry):
-    schema_dict = {"key": key_entry, "format": format_entry, "description": description_entry}
+    schema_dict = {
+        "key": key_entry,
+        "format": format_entry,
+        "description": description_entry,
+    }
     return schema_dict
 
 
 def send_error_to_prefect_cloud(e: Exception):
+    """
+    Sends error message to the prefect cloud. This error message will be visible in the Prefect UI
+    """
     prefect_logger = get_run_logger()
     prefect_logger.error(str(e))
 
 
 def send_info_to_prefect_cloud(e: str):
+    """
+    Sends info to thePrefect cloud. This message will be visible in the Prefect UI.
+    """
     prefect_logger = get_run_logger()
     prefect_logger.info(str(e))
 
 
 class TasksRpcClient(object):
-
     def __init__(self, task_name, context, data_path):
         self.connection = pika.BlockingConnection(
-            pika.ConnectionParameters(host='localhost',heartbeat=0))
+            pika.ConnectionParameters(host="localhost", heartbeat=0)
+        )
 
         self.routing_key = task_name
         print(self.routing_key, "%%%%%$$$$$$$$")
         self.context = context
         self.data_path = data_path
         self.channel = self.connection.channel()
-        self.channel.exchange_declare(exchange='topic_logs', exchange_type='topic')
-        result = self.channel.queue_declare(queue='', exclusive=False, durable=True)
+        self.channel.exchange_declare(exchange="topic_logs", exchange_type="topic")
+        result = self.channel.queue_declare(queue="", exclusive=False, durable=True)
         self.callback_queue = result.method.queue
         print("queue name-----", self.callback_queue)
 
         self.channel.basic_consume(
             queue=self.callback_queue,
             on_message_callback=self.on_response,
-            auto_ack=True)
+            auto_ack=True,
+        )
 
         self.response = None
         self.corr_id = None
@@ -83,28 +109,31 @@ class TasksRpcClient(object):
         # first send an ack message to see if the worker is up
         ack_msg = "get-ack"
         self.channel.basic_publish(
-            exchange='topic_logs',
+            exchange="topic_logs",
             routing_key=self.routing_key,
             properties=pika.BasicProperties(
                 reply_to=self.callback_queue,
                 correlation_id=self.corr_id,
             ),
-            body=ack_msg.encode("utf-8"))
+            body=ack_msg.encode("utf-8"),
+        )
         self.connection.process_data_events(time_limit=2)
         if self.response is None:
-            return "Worker failed with an error - No worker to pick the task".encode('utf-8')
+            return "Worker failed with an error - No worker to pick the task".encode(
+                "utf-8"
+            )
         print(self.response, "Response before message")
         # Send the actual task oly if worker is alive
-        message = {"context": self.context,
-                   "data_path": self.data_path}
+        message = {"context": self.context, "data_path": self.data_path}
         self.channel.basic_publish(
-            exchange='topic_logs',
+            exchange="topic_logs",
             routing_key=self.routing_key,
             properties=pika.BasicProperties(
                 reply_to=self.callback_queue,
                 correlation_id=self.corr_id,
             ),
-            body=json.dumps(message))
+            body=json.dumps(message),
+        )
         self.connection.process_data_events(time_limit=None)
         return self.response
 

@@ -1,8 +1,9 @@
-from mako.template import Template
 import argparse
 
+from mako.template import Template
 
-def generate_task_template(task_name:str, output_file_name:str):
+
+def generate_task_template(task_name: str, output_file_name: str):
     task_code_content = f"""
 import json
 
@@ -80,14 +81,16 @@ channel.start_consuming()
     return template
 
 
-
-if __name__=="__main__":
+if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generates Rabbit-mq task code")
     parser.add_argument("--task_name", type=str, help="Name of the task")
-    parser.add_argument("--result_file", type=str, help="Name of the file in s3 to store the result of the task")
+    parser.add_argument(
+        "--result_file",
+        type=str,
+        help="Name of the file in s3 to store the result of the task",
+    )
     args = parser.parse_args()
     task_name = args.task_name
     result_file = args.result_file
     template = generate_task_template(task_name, result_file)
     print(template.render())
-

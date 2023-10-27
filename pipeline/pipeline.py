@@ -1,12 +1,11 @@
 import sys
 
-import pandas as pd
-
 # import os
 # os.environ.setdefault("DJANGO_SETTINGS_MODULE", "dataplatform.settings")
 # import django
 # django.setup()
 import log_utils
+import pandas as pd
 from datatransform import models
 from datatransform.models import Task
 
@@ -22,7 +21,6 @@ class Pipeline(object):
     def add(self, tasks):
         self._commands.append(tasks)
         return self
-
 
     #
     # def execute(self):

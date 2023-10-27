@@ -5,7 +5,9 @@ import logging
 
 def set_log_file(pipeline_id, pipeline_name):
     now = datetime.datetime.now()
-    log_file_name = f'logs/{pipeline_id}_{pipeline_name}_{now.strftime("%d_%m_%Y-%H_%M_%S")}.log'
+    log_file_name = (
+        f'logs/{pipeline_id}_{pipeline_name}_{now.strftime("%d_%m_%Y-%H_%M_%S")}.log'
+    )
     logger = logging.getLogger("IDP-Datapipeline")
     hdlr = logging.StreamHandler()
     fhdlr = logging.FileHandler(log_file_name)
@@ -16,7 +18,7 @@ def set_log_file(pipeline_id, pipeline_name):
 
 
 def get_logger_for_existing_file(pipeline_id):
-    log_file = glob.glob(f'logs/{pipeline_id}*.log')[0]
+    log_file = glob.glob(f"logs/{pipeline_id}*.log")[0]
     logger = logging.getLogger("IDP-Datapipeline")
     hdlr = logging.StreamHandler()
     fhdlr = logging.FileHandler(log_file)

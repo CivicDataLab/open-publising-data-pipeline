@@ -1,8 +1,10 @@
-import boto3
+import json
 import os
 import pdb
-import json
-s3_client = boto3.client('s3')
+
+import boto3
+
+s3_client = boto3.client("s3")
 
 
 bucket_name = "generic-pipeline-data"
@@ -17,25 +19,22 @@ def upload_result(path, folder=None):
         folder_url = s3_obj_url + folder
         return folder_url
     else:
-        s3_client.upload_file(
-                Filename=path,
-                Bucket=bucket_name,
-                Key=key)
+        s3_client.upload_file(Filename=path, Bucket=bucket_name, Key=key)
         # with open(path, "rb") as file:
         #         s3_client.upload_fileobj(file, bucket_name, path)
         file_url = s3_obj_url + key
         return file_url
 
 
-def upload_folder(folder_name:str, path_to_local_folder:str):
+def upload_folder(folder_name: str, path_to_local_folder: str):
     # check if folder already exists
 
     # Get a list of all the keys in the S3 bucket
     result = s3_client.list_objects_v2(Bucket=bucket_name)
     print(result)
     # Extract the common prefixes, which represent the virtual folders in the S3 bucket
-    #result = json.loads(result)
-    folders = [content['Key'] for content in result.get("Contents")]
+    # result = json.loads(result)
+    folders = [content["Key"] for content in result.get("Contents")]
     # Extract the virtual folder names by filtering the key names that end with a "/" character
     print("folders in s3-----", folders)
     if folder_name in folders:
@@ -57,4 +56,5 @@ def upload_folder(folder_name:str, path_to_local_folder:str):
         for file in local_files:
             upload_result(file, folder_name)
 
-upload_folder('boto_folder_test5/', '/home/ubuntu/test-folder')
+
+upload_folder("boto_folder_test5/", "/home/ubuntu/test-folder")

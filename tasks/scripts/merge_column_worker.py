@@ -7,30 +7,33 @@ import pika
 
 # from tasks.scripts.s3_utils import upload_result
 
-connection = pika.BlockingConnection(
-    pika.ConnectionParameters(host='localhost'))
+connection = pika.BlockingConnection(pika.ConnectionParameters(host="localhost"))
 
 channel = connection.channel()
-channel.exchange_declare(exchange='topic_logs', exchange_type='topic')
-result = channel.queue_declare('', exclusive=False, durable=True)
+channel.exchange_declare(exchange="topic_logs", exchange_type="topic")
+result = channel.queue_declare("", exclusive=False, durable=True)
 queue_name = result.method.queue
 
 print("queue name----", queue_name)
 binding_key = "merge_columns"
 
-channel.queue_bind(exchange='topic_logs', queue=queue_name, routing_key=binding_key)
+channel.queue_bind(exchange="topic_logs", queue=queue_name, routing_key=binding_key)
 
 
 def merge_columns(context, data_path):
     try:
-        cols_to_merge = context['columns'] # list
+        cols_to_merge = context["columns"]  # list
         print(cols_to_merge)
-        output_column = context['output_column']
+        output_column = context["output_column"]
         print(output_column)
-        separator = context['separator']
-        drop_flag = context['drop_flag']
+        separator = context["separator"]
+        drop_flag = context["drop_flag"]
         transformed_data = pd.read_csv(data_path)
-        transformed_data[output_column] = transformed_data[cols_to_merge].astype(str).agg(f"""{separator}""".join, axis=1)
+        transformed_data[output_column] = (
+            transformed_data[cols_to_merge]
+            .astype(str)
+            .agg(f"""{separator}""".join, axis=1)
+        )
         if drop_flag == "True":
             transformed_data = transformed_data.drop(cols_to_merge, axis=1)
         temp_file_name = str(uuid.uuid4())
@@ -48,12 +51,16 @@ def merge_columns(context, data_path):
 
 def on_request(ch, method, props, body):
     # send the worker-alive message if the request message is -> get-ack
-    if body.decode('utf-8') == 'get-ack':
+    if body.decode("utf-8") == "get-ack":
         print("inside if..")
-        ch.basic_publish(exchange="",
-                         routing_key=props.reply_to,
-                         properties=pika.BasicProperties(correlation_id=props.correlation_id, delivery_mode=2),
-                         body='worker alive')
+        ch.basic_publish(
+            exchange="",
+            routing_key=props.reply_to,
+            properties=pika.BasicProperties(
+                correlation_id=props.correlation_id, delivery_mode=2
+            ),
+            body="worker alive",
+        )
         ch.basic_ack(delivery_tag=method.delivery_tag)
     else:
         # if the message is other than "get-ack" then carryout the task
@@ -65,10 +72,14 @@ def on_request(ch, method, props, body):
             # with open("merge_col_result", "wb") as f:
             #     f.write(str(response_msg.text))
             #     s3_link = upload_result("merge_col_result")
-            ch.basic_publish(exchange="",
-                             routing_key=props.reply_to,
-                             properties=pika.BasicProperties(correlation_id=props.correlation_id, delivery_mode=2),
-                             body=str(response))
+            ch.basic_publish(
+                exchange="",
+                routing_key=props.reply_to,
+                properties=pika.BasicProperties(
+                    correlation_id=props.correlation_id, delivery_mode=2
+                ),
+                body=str(response),
+            )
             ch.basic_ack(delivery_tag=method.delivery_tag)
             print("[x] sent the response to the client..", response)
         except Exception as e:

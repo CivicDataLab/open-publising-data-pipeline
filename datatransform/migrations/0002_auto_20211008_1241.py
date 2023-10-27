@@ -4,26 +4,25 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('datatransform', '0001_initial'),
+        ("datatransform", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='task',
-            name='order_no',
+            model_name="task",
+            name="order_no",
             field=models.IntegerField(default=1),
             preserve_default=False,
         ),
         migrations.AlterField(
-            model_name='pipeline',
-            name='pipeline_id',
+            model_name="pipeline",
+            name="pipeline_id",
             field=models.AutoField(primary_key=True, serialize=False),
         ),
         migrations.AlterField(
-            model_name='task',
-            name='task_id',
+            model_name="task",
+            name="task_id",
             field=models.AutoField(primary_key=True, serialize=False),
         ),
     ]

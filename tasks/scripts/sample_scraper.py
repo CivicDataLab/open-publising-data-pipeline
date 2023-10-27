@@ -1,23 +1,22 @@
 import json
+
 import pandas as pd
 import pika
 import requests
 from bs4 import BeautifulSoup
 from s3_utils import *
 
-connection = pika.BlockingConnection(
-    pika.ConnectionParameters(host='localhost'))
+connection = pika.BlockingConnection(pika.ConnectionParameters(host="localhost"))
 
 channel = connection.channel()
-channel.exchange_declare(exchange='topic_logs', exchange_type='topic')
-result = channel.queue_declare('', exclusive=False, durable=True)
+channel.exchange_declare(exchange="topic_logs", exchange_type="topic")
+result = channel.queue_declare("", exclusive=False, durable=True)
 queue_name = result.method.queue
 
 print("queue name----", queue_name)
 binding_key = "example_scraper"
 
-channel.queue_bind(exchange='topic_logs', queue=queue_name, routing_key=binding_key)
-
+channel.queue_bind(exchange="topic_logs", queue=queue_name, routing_key=binding_key)
 
 
 def sample_scraper(url):
@@ -33,6 +32,7 @@ def sample_scraper(url):
     elements = soup.find("h1")
     return elements
 
+
 def on_request(ch, method, props, body):
     print("[x] received task message...")
     task_details = json.loads(body)
@@ -47,14 +47,20 @@ def on_request(ch, method, props, body):
             with open("sample_scraper.txt", "wb") as f:
                 f.write(str(response_msg.text))
             s3_link = upload_result("sample_scraper.txt")
-        ch.basic_publish(exchange="",
-                         routing_key=props.reply_to,
-                         properties=pika.BasicProperties(correlation_id=props.correlation_id,delivery_mode=2),
-                         body=str(s3_link))
+        ch.basic_publish(
+            exchange="",
+            routing_key=props.reply_to,
+            properties=pika.BasicProperties(
+                correlation_id=props.correlation_id, delivery_mode=2
+            ),
+            body=str(s3_link),
+        )
         ch.basic_ack(delivery_tag=method.delivery_tag)
         print("[x] sent the response to the client..")
     except Exception as e:
         raise e
+
+
 channel.basic_qos(prefetch_count=2)
 channel.basic_consume(queue=queue_name, on_message_callback=on_request)
 

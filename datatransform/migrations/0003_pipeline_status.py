@@ -4,16 +4,15 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('datatransform', '0002_auto_20211008_1241'),
+        ("datatransform", "0002_auto_20211008_1241"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='pipeline',
-            name='status',
-            field=models.CharField(default='', max_length=50),
+            model_name="pipeline",
+            name="status",
+            field=models.CharField(default="", max_length=50),
             preserve_default=False,
         ),
     ]
