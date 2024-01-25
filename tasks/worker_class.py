@@ -4,10 +4,10 @@ import pandas as pd
 import pika
 
 
-# from tasks.scripts.s3_utils import upload_result
-
-
 class Worker:
+    """
+    The Worker class can be used as a wrapper around the independently written tasks(methods.)
+    """
     def __init__(self, task_name):
         self.connection = pika.BlockingConnection(
             pika.ConnectionParameters(host='localhost', heartbeat=0))
@@ -24,9 +24,15 @@ class Worker:
         self.dynamic_method = None
 
     def add_task(self, method):
+        """
+        Use this method to add the defined task.
+        """
         self.dynamic_method = method
 
     def execute_task(self, context, data_path):
+        """
+        This is called internally to execute the task that is added to the class.
+        """
         try:
             method = self.dynamic_method
             return method(context, data_path)
@@ -66,6 +72,9 @@ class Worker:
                 raise e
 
     def start_worker(self):
+        """
+        Calling this method would start the worker.
+        """
         self.channel.basic_qos(prefetch_count=2)
         self.channel.basic_consume(queue=self.queue_name, on_message_callback=self.on_request)
 
