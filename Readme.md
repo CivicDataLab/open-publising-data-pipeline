@@ -92,7 +92,7 @@ Following are the steps to be followed to add a new task to the pipeline.
 1.  Define your task name and the context (i.e. necessary information to perform the task).
 2.  The name of the publisher method, and the name of the task should be same. This is the name that we use in the *transformers_list* of API call.   
 3.  Decide the project that you want to add the task in. Projects can be found in the [projects](projects) folder. 
-4.  Generate the publisher code by running `python -m code_templates.publisher_template --task_name ''` in a terminal.
+4.  Generate the publisher code by running `python -m code_templates.publisher_template --task_name '<task_name>'` in a terminal.
 5.  Paste the generated code in the Python file that contains the project flow. 
     The following line publishes the task along with the context and the data in the queue.
 6.  `data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data)  
@@ -102,12 +102,91 @@ Following are the steps to be followed to add a new task to the pipeline.
 # Writing the worker
 
 1.  Worker is any piece of code that has a RabbitMQ wrapper around it so that if publisher publishes a task, it can pick the task up and execute the code. 
-2.  To create a worker generate the boilerplate by running the following command. 
-    `python -m code_templates.task_template.py --task_name "" --result_file ""`
-    The above command will generate a template, in which the task specific logic can be written. Go through the template, and there will be a method defined with the task name and the logic needs to be written within the method. Any other method can be called from within this method so that the task remains modular. Make sure that everything is written within try block so that if anything goes wrong inside the worker it responds back to the publisher.  
-3.  Save the file with `.py` extension and deploy it onto any server that is clustered with `node-1 server`. 
-4.  Once the worker code is deployed, it can be run with `python filename.py` - this will start the worker. Whenever the publisher publishes a message for this worker, worker picks the message, processes it and returns the response back to the publisher.
+2. First, define the method that needs to be run as a RabbitMQ worker. The method should contain the following parameters.
+   1. `context` - This would be a dictionary which contains actual parameters for the method. 
+   2. `data_path` - The path where the final result would be stored.  
+3. To create a worker it is essential to instantiate [worker_class](tasks/worker_class.py). The following lines of code will be needed inorder to run the worker
+`
+worker = Worker("task_name")
+worker.add_task(method_name)
+worker.start_worker()`
+4. Save the file with `.py` extension and deploy it onto any server that is clustered with `node-1 server`. 
+5. Once the worker code is deployed, it can be run with `python filename.py` - this will start the worker. Whenever the publisher publishes a message for this worker, worker picks the message, processes it and returns the response back to the publisher.
 
+An example would make the steps clear. Suppose we need to add a task to add two numbers to the pipeline. The steps to be followed are as follows. 
+1. Defining the task name and the context - let's name our task as `add_nums`. To add two numbers we would be needing two numbers as parameters. Hence, our context looks like the following
+```
+{
+    "num1" : 10,
+    "num2" : 20  
+}
+```
+2. Now, to generate the publisher, run `python -m code_templates.publisher_template --add_nums`. This would generate a code that looks like the following.
+```
+@task
+def add_nums(context, pipeline, task_obj):
+    data, exception_flag = publish_task_and_process_result(task_obj, context, pipeline.data_path)
+    if not exception_flag:    # if there's no error while executing the task
+        # Replace the following with your own code if the need is different. 
+        # Generally, to read the returned data into a dataframe and save it against the pipeline object for further tasks
+        #df = pd.read_csv(StringIO(data), sep=',')
+        pipeline.data_path = data
+        # Following is a mandatory line to set logs in prefect UI
+        set_task_model_values(task_obj, pipeline)
+    else:
+       pipeline.logger.error("ERROR: at add_nums")
+```
+Paste the above code in a relevant Prefect flow. 
+3. Write the actual worker logic - as a method with `context` and `data_path` as the parameters. 
+```
+def add_numbers(context, data_path):
+    # unwrap the parameters from the context
+    num1 = context.get("num1")
+    num2 = context.get("num2")
+    result = num1 + num2
+    return result # note that we are not using data_path here. We are just returning the result. 
+```
+4. Now, wrap the defined method within worker class using the following lines of code. 
+```
+worker = Worker("add_nums") # Note that the task name defined earlier is - add_nums 
+worker.add_task(add_numbers) # add_numbers is the method that we defined
+worker.start_worker()
+```
+5. The complete `add_nums_worker.py` file looks as follows. 
+```
+from worker import Worker # import the Worker class from worker_class
+
+def add_numbers(context, data_path):
+    num1 = context.get("num1")
+    num2 = context.get("num2")
+    result = num1 + num2
+    return result
+
+worker = Worker("add_nums") # Note that the task name defined earlier is - add_nums 
+worker.add_task(add_numbers) # add_numbers is the method that we defined
+worker.start_worker()
+```
+6. Save the file and run the worker by executing - `python add_nums_worker.py`
+7. Start the server and send a Post request to execute the task through the pipeline. 
+```
+POST /transformer/pipe_create HTTP/1.1
+Host: 127.0.0.1:8000
+Content-Type: application/json
+Content-Length: 207
+
+{
+ "pipeline_name": "pipe14",
+ "data_url": "",
+ "project": "generic_transformations",
+  "transformers_list" : [
+  {
+    "name": "add_nums",
+    "order_no": 1, 
+    "context": {"num1": 100, "num2": -20}
+  }
+   ]
+}
+```
 # API - documentation for the existing projects
 
 The pipeline currently supports the following projects. 
