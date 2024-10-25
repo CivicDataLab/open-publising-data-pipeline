@@ -1,6 +1,6 @@
 # Project Overview
 
-This Django project is designed to create and manage data pipelines. The project comprises two primary components:
+This pipeline is designed to standardize for data sourcing, transformation and publishing data for different use-cases and domains. This enables the creation of data pipelines easily and with inbuild set of generic tasks. The project comprises two primary components:
 
 1.  **Task Publisher**: A [Prefect](https://docs.prefect.io/) pipeline responsible for publishing tasks in the order they are received from API requests via the user interface.
 
