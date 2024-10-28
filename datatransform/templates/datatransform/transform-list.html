@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+        .transformer-card {
+            background: #ffffff;
+            border: 1px solid #e1e1e1;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .transformer-title {
+            font-size: 1.25rem;
+            color: #2d3748;
+            margin-bottom: 15px;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+        .context-item {
+            background: #f7fafc;
+            border: 1px solid #edf2f7;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 10px;
+        }
+        .context-name {
+            font-weight: 500;
+            color: #4a5568;
+            margin-bottom: 4px;
+        }
+        .context-type {
+            display: inline-block;
+            background: #ebf4ff;
+            color: #3182ce;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            margin-bottom: 4px;
+        }
+        .context-desc {
+            color: #718096;
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>
+            Task List | Your entrypoint to the program
+        </h2>
+        {% for transformer in result %}
+        <div class="transformer-card">
+            <h2 class="transformer-title">{{ transformer.name }}</h2>
+            {% for context in transformer.context %}
+            <div class="context-item">
+                <div class="context-name">{{ context.name }}</div>
+                <div class="context-type">{{ context.type }}</div>
+                <div class="context-desc">{{ context.desc }}</div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+    </div>
+</body>
+</html>

@@ -7,6 +7,7 @@ from .models import Task, Pipeline
 # Create your views here.
 
 from django.http import JsonResponse, HttpResponse
+from django.shortcuts import render
 import pandas as pd
 import json
 import uuid
@@ -17,27 +18,34 @@ def transformer_list(request):
         {"name": "skip_column", "context": [
             {"name": "columns", "type": "field_multi", "desc": "Please select column names to be deleted"}]},
         {"name": "merge_columns", "context": [
-            {"name": "column1", "type": "field_single", "desc": "Please select first column name"},
-            {"name": "column2", "type": "field_single", "desc": "Please select second column name"},
-            {"name": "output_column", "type": "string", "desc": "Please enter output column name"},
-            {"name": "separator", "type": "string", "desc": "Please enter separator char/string"}
+            {"name": "column1", "type": "field_single",
+                "desc": "Please select first column name"},
+            {"name": "column2", "type": "field_single",
+                "desc": "Please select second column name"},
+            {"name": "output_column", "type": "string",
+                "desc": "Please enter output column name"},
+            {"name": "separator", "type": "string",
+                "desc": "Please enter separator char/string"}
         ]},
         {"name": "change_format", "context": [
             {"name": "format", "type": "string", "desc": "xml/json/pdf"}]},
         {"name": "anonymize", "context": [
-            {"name": "to_replace", "type": "string", "desc": "String to be replaced"},
+            {"name": "to_replace", "type": "string",
+                "desc": "String to be replaced"},
             {"name": "replace_val", "type": "string", "desc": "Replacement string"},
-            {"name": "column", "type": "field_single", "desc": "Please select column name to perform operation"}
+            {"name": "column", "type": "field_single",
+                "desc": "Please select column name to perform operation"}
         ]},
         {"name": "aggregate", "context": [
-            {"name": "index", "type": "string", "desc": "Field that is needed as index"},
-            {"name": "columns", "type": "field_multi", "desc": "Select column names"},
+            {"name": "index", "type": "string",
+                "desc": "Field that is needed as index"},
+            {"name": "columns", "type": "field_multi",
+                "desc": "Select column names"},
             {"name": "values", "type": "string", "desc": "values"}
         ]}
     ]
 
-    context = {"result": transformers, "Success": True}
-    return JsonResponse(context, safe=False)
+    return render(request, 'datatransform/transform-list.html', {"result": transformers})
 
 
 def pipeline_filter(request):
@@ -72,7 +80,8 @@ def pipe_list(request):
     data = {}
     for each in task_data:
         p = Pipeline.objects.get(pk=each['Pipeline_id_id'])
-        res_url = "https://ndp.ckan.civicdatalab.in/dataset/" + p.output_id + "/resource/" + each['output_id']
+        res_url = "https://ndp.ckan.civicdatalab.in/dataset/" + \
+            p.output_id + "/resource/" + each['output_id']
 
         if each['Pipeline_id_id'] not in data:
             data[each['Pipeline_id_id']] = {'date': each['created_at'], 'status': p.status, 'name': p.pipeline_name,
@@ -94,7 +103,8 @@ def pipe_create(request):
         transformers_list = post_data.get('transformers_list', None)
         data_url = post_data.get('data_url', None)
         pipeline_name = post_data.get('pipeline_name', '')
-        project = post_data.get('project', '') # flag to direct to the exact prefect flow
+        # flag to direct to the exact prefect flow
+        project = post_data.get('project', '')
         p = Pipeline(status="Created", pipeline_name=pipeline_name)
 
         p.save()
@@ -109,14 +119,14 @@ def pipe_create(request):
         #     logger.error(f""" Got an error while reading data from URL - {str(e)}""")
         #     data = None
 
-
         for _, each in enumerate(transformers_list):
             task_name = each.get('name', None)
             task_order_no = each.get('order_no', None)
             task_context = each.get('context', None)
 
             p = Pipeline.objects.get(pk=p_id)
-            p.task_set.create(task_name=task_name, status="Created", order_no=task_order_no, context=task_context)
+            p.task_set.create(task_name=task_name, status="Created",
+                              order_no=task_order_no, context=task_context)
         # temp_file_name = uuid.uuid4().hex
 
         # if data is not None:
@@ -137,7 +147,7 @@ def pipe_create(request):
         channel.basic_publish(exchange='',
                               routing_key='pipeline_ui_queue',
                               body=json.dumps(message_body))
-        print(f''' Sent {p_id}, {data_url}, {project} to task executor''' )
+        print(f''' Sent {p_id}, {data_url}, {project} to task executor''')
         connection.close()
         logger.info(f"""INFO: sent {message_body} to the worker demon""")
         context = {"result": p_id, "Success": True}

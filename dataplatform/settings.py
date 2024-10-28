@@ -30,16 +30,16 @@ ALLOWED_HOSTS = ['*']
 
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ORIGIN_WHITELIST = (
-       'http://localhost:3000',
+    'http://localhost:3000',
 )
 
 CORS_ALLOW_HEADERS = ['*']
 
 CSRF_TRUSTED_ORIGINS = [
-                           'http://13.232.239.70:3000/',
-                           'http://localhost:3000/',
-                           'http://127.0.0.1:3000/',
-                        ]
+    'http://13.232.239.70:3000/',
+    'http://localhost:3000/',
+    'http://127.0.0.1:3000/',
+]
 
 # Application definition
 
@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'background_task',
     'corsheaders',
     'django_extensions',
+    'livereload',
 ]
 
 MIDDLEWARE = [
@@ -66,6 +67,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'livereload.middleware.LiveReloadScript',
 ]
 
 ROOT_URLCONF = 'dataplatform.urls'
